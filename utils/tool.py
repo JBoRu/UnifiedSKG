@@ -2,6 +2,7 @@ import importlib
 
 
 def get_model(model):
+    print('models.{}'.format(model))
     Model = importlib.import_module('models.{}'.format(model)).Model
     return Model
 

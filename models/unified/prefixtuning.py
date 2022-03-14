@@ -21,9 +21,13 @@ class Model(PushToHubFriendlyModel):
         print("prefix-tuning sequence length is {}.".format(self.preseqlen))
 
         # Load tokenizer and model.
-        self.tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
+        # self.tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
+        # self.pretrain_model = AutoModelForSeq2SeqLM.from_pretrained(
+        #     args.bert.location
+        # )
+        self.tokenizer = AutoTokenizer.from_pretrained(args.bert.cache_path, use_fast=False)
         self.pretrain_model = AutoModelForSeq2SeqLM.from_pretrained(
-            args.bert.location
+            args.bert.cache_path
         )
         self.config = self.pretrain_model.config
         from ..prompt.modeling_bart import BartForConditionalGeneration

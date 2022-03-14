@@ -30,11 +30,11 @@ def main() -> None:
     # Initialize the logger
     logging.basicConfig(level=logging.INFO)
 
-    from filelock import FileLock
-    import nltk
-    with FileLock(".lock") as lock:
-        nltk.download("punkt", quiet=True)
-        nltk.download("stopwords", quiet=True)
+    # from filelock import FileLock
+    # import nltk
+    # with FileLock(".lock") as lock:
+    #     nltk.download("punkt", quiet=True)
+    #     nltk.download("stopwords", quiet=True)
 
     # Get args
     parser = HfArgumentParser((WrappedSeq2SeqTrainingArguments,))
@@ -42,11 +42,13 @@ def main() -> None:
     set_seed(training_args.seed)
     args = Configure.Get(training_args.cfg)
 
+    # Get checkpoint
     if 'checkpoint-???' in args.bert.location:
         args.bert.location = get_last_checkpoint(
             os.path.dirname(args.bert.location.model_name_or_path))
         logger.info(f"Resolve model_name_or_path to {args.bert.location.model_name_or_path}")
 
+    # Set wandb
     if "wandb" in training_args.report_to and training_args.local_rank <= 0:
         import wandb
 
@@ -54,9 +56,9 @@ def main() -> None:
         if "MLFLOW_EXPERIMENT_ID" in os.environ:
             init_args["group"] = os.environ["MLFLOW_EXPERIMENT_ID"]
         wandb.init(
-            project=os.getenv("WANDB_PROJECT", "uni-frame-for-knowledge-tabular-tasks"),
+            project="PLM4KBQA",
             name=training_args.run_name,
-            entity=os.getenv("WANDB_ENTITY", 'sgtnew'),
+            entity='jinhao-jiang',
             **init_args,
         )
         wandb.config.update(training_args, allow_val_change=True)
@@ -81,7 +83,6 @@ def main() -> None:
 
     # The inputs will be train, dev, test or train, dev now.
     # We deprecate the k-fold cross-valid function since it causes too many avoidable troubles.
-
     if not args.arg_paths:
         cache_root = os.path.join('output', 'cache')
         os.makedirs(cache_root, exist_ok=True)

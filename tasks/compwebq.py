@@ -76,7 +76,8 @@ class ComplexWebQuestions(datasets.GeneratorBasedBuilder):
         )
 
     def _split_generators(self, dl_manager):
-        downloaded_filepath = dl_manager.download_and_extract(_URL)
+        # downloaded_filepath = dl_manager.download_and_extract(_URL)
+        downloaded_filepath = '/home/jiangjinhao/work/QA/PLM4KBQA/data/downloads/extracted/9f6e1e8ee942b55e884e0db985086fcdc6f6cc4b2f3ea5ab2a542e7b009ab9a3/'
 
         return [
             datasets.SplitGenerator(
