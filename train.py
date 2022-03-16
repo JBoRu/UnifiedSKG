@@ -37,6 +37,7 @@ def main() -> None:
     #     nltk.download("stopwords", quiet=True)
 
     # Get args
+    logger.info("Get args")
     parser = HfArgumentParser((WrappedSeq2SeqTrainingArguments,))
     training_args, = parser.parse_args_into_dataclasses()
     set_seed(training_args.seed)
@@ -50,6 +51,7 @@ def main() -> None:
 
     # Set wandb
     if "wandb" in training_args.report_to and training_args.local_rank <= 0:
+        logger.info("Set wandb")
         import wandb
 
         init_args = {}
@@ -65,8 +67,8 @@ def main() -> None:
 
     # Detect last checkpoint
     last_checkpoint = None
-    if os.path.isdir(
-            training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
+    if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
+        logger.info("Detect last checkpoint")
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
             raise ValueError(
@@ -91,10 +93,12 @@ def main() -> None:
         seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).to_seq2seq(
             raw_datasets_split, cache_root)
     else:
+        logger.info("Load dataset")
         cache_root = os.path.join('output', 'cache')
         os.makedirs(cache_root, exist_ok=True)
         meta_tuning_data = {}
         for task, arg_path in args.arg_paths:
+            print("Process task %s and use cfg from %s"%(task,arg_path))
             task_args = Configure.Get(arg_path)
             task_args.bert = args.bert
             print('task_args.bert.location:', task_args.bert.location)
@@ -106,10 +110,13 @@ def main() -> None:
 
             meta_tuning_data[arg_path] = task_seq2seq_dataset_split
 
+        logger.info("Construct dataset")
         seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).\
             to_seq2seq(meta_tuning_data)
 
+    logger.info("Get evaluator")
     evaluator = utils.tool.get_evaluator(args.evaluate.tool)(args)
+    logger.info("Get model")
     model = utils.tool.get_model(args.model.name)(args)
     model_tokenizer = model.tokenizer
 
@@ -148,6 +155,7 @@ def main() -> None:
 
     # Load model weights (for --do_train=False or post finetuning).
     if training_args.load_weights_from:
+        logger.info("Load weights from %s"%os.path.join(training_args.load_weights_from, transformers.WEIGHTS_NAME))
         state_dict = torch.load(os.path.join(training_args.load_weights_from, transformers.WEIGHTS_NAME), map_location="cpu")
         trainer.model.load_state_dict(state_dict, strict=True)
         # release memory
@@ -174,6 +182,7 @@ def main() -> None:
 
     # Training
     if training_args.do_train:
+        logger.info("*** Train ***")
         checkpoint = None
         if training_args.resume_from_checkpoint is not None:
             checkpoint = training_args.resume_from_checkpoint
@@ -204,6 +213,7 @@ def main() -> None:
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
 
+    # Prediction
     if training_args.do_predict:
         logger.info("*** Predict ***")
 
